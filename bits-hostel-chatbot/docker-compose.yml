@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  react-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "80:80"
+    environment:
+      - VITE_AWS_REGION=${VITE_AWS_REGION}
+      - VITE_AWS_ACCESS_KEY_ID=${VITE_AWS_ACCESS_KEY_ID}
+      - VITE_AWS_SECRET_ACCESS_KEY=${VITE_AWS_SECRET_ACCESS_KEY}
+      - VITE_BOT_ID=${VITE_BOT_ID}
+      - VITE_BOT_ALIAS_ID=${VITE_BOT_ALIAS_ID}
+      - VITE_BOT_LOCALE_ID=${VITE_BOT_LOCALE_ID}
+      - VITE_BOT_NAME=${VITE_BOT_NAME}
+    networks:
+      - react-network
+    volumes:
+      - .:/app
+      - /app/node_modules
+    command: npm run dev
+
+networks:
+  react-network:
+    driver: bridge

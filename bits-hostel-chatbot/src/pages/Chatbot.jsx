@@ -5,19 +5,20 @@ import { Send, MessageCircle, X, Mic } from "lucide-react";
 import { LexRuntimeV2Client, RecognizeTextCommand } from "@aws-sdk/client-lex-runtime-v2";
 import { v4 as uuidv4 } from "uuid";
 
-// ⚠️ Replace hardcoded credentials with environment variables in production
+
 const client = new LexRuntimeV2Client({
-  region: "ap-northeast-1",
+  region: import.meta.env.VITE_AWS_REGION,
   credentials: {
-    accessKeyId: "________",
-    secretAccessKey: "f_______",
+    accessKeyId: import.meta.env.VITE_AWS_ACCESS_KEY_ID,
+    secretAccessKey: import.meta.env.VITE_AWS_SECRET_ACCESS_KEY,
   },
 });
 
 const sessionId = uuidv4();
-const BOT_ID = "_______";
-const BOT_ALIAS_ID = "________";
-const BOT_LOCALE_ID = "en_US";
+const BOT_ID = import.meta.env.VITE_BOT_ID;
+const BOT_ALIAS_ID = import.meta.env.VITE_BOT_ALIAS_ID;
+const BOT_LOCALE_ID = import.meta.env.VITE_BOT_LOCALE_ID;
+
 
 const Chatbot = () =>  {
   const [isOpen, setIsOpen] = useState(false);
@@ -25,6 +26,7 @@ const Chatbot = () =>  {
   const [input, setInput] = useState("");
   const [isListening, setIsListening] = useState(false);
 
+  console.log("Chatbot component rendered");
   const sendMessage = async (messageText) => {
     if (!messageText.trim()) return;
 
