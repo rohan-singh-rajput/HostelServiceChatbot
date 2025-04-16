@@ -1,9 +1,14 @@
-import { useAuth } from "./context/AuthContext";
+// import { useAuth } from "./context/AuthContext";
+import { useAuth } from "react-oidc-context";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import { Routes, Route, Navigate } from "react-router-dom";
 import Chatbot from "./pages/Chatbot";
+import { Amplify } from 'aws-amplify';
+import awsconfig from './aws-exports';
+Amplify.configure(awsconfig);
+
 
 function ProtectedRoute({ children }) {
   const { user } = useAuth();
@@ -26,5 +31,6 @@ export default function App() {
         }
       />
     </Routes>
+    
   );
 }

@@ -1,46 +1,60 @@
-import { useState } from "react";
-import { useAuth } from "../context/AuthContext";
+import React, { useEffect } from "react";
+import { withAuthenticator } from "@aws-amplify/ui-react";
+import { fetchUserAttributes, getCurrentUser, signOut } from "aws-amplify/auth";
+import { useNavigate } from "react-router-dom";
+import "@aws-amplify/ui-react/styles.css";
 
-export default function Login() {
-  const { login } = useAuth();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+function Login({ user }) {
+  const navigate = useNavigate();
 
-  const handleLogin = (e) => {
-    e.preventDefault();
-    login(email, password);
-  };
+  useEffect(() => {
+    const validateEmailDomain = async () => {
+      try {
+        const currentUser = await getCurrentUser();
+        const attributes = await fetchUserAttributes();
+        const email = attributes?.email;
+
+        if (!email) {
+          throw new Error("No email found in user attributes");
+        }
+
+        console.log("Authenticated user email:", email);
+
+        if (email.endsWith("@hyderabad.bits-pilani.ac.in")) {
+          navigate("/chat");
+        } else {
+          alert("Please use your BITS Hyderabad email address to login.");
+          await signOut();
+          navigate("/");
+        }
+      } catch (error) {
+        console.error("Authentication error:", error);
+        await signOut();
+        navigate("/");
+      }
+    };
+
+    if (user) {
+      validateEmailDomain();
+    }
+  }, [user, navigate]);
 
   return (
-    <div className="min-h-screen bg-black text-white flex items-center justify-center px-4">
-      <form
-        onSubmit={handleLogin}
-        className="w-full max-w-md bg-white text-black p-8 rounded-2xl shadow-xl space-y-4"
-      >
-        <h2 className="text-2xl font-bold text-center">Login to Dashboard</h2>
-        <input
-          type="email"
-          className="w-full p-3 rounded-lg border border-gray-300"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          className="w-full p-3 rounded-lg border border-gray-300"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
+    <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center">
+      <div className="bg-white text-black p-8 rounded-xl shadow-xl space-y-4">
+        <h2 className="text-xl font-bold">Welcome, {user?.username || "User"}</h2>
         <button
-          type="submit"
-          className="w-full bg-black text-white p-3 rounded-lg hover:bg-gray-900 transition"
+          onClick={signOut}
+          className="bg-red-600 px-4 py-2 rounded-lg text-white hover:bg-red-700 transition"
         >
-          Login
+          Sign Out
         </button>
-      </form>
+      </div>
     </div>
   );
 }
+
+// Amplify Gen 2
+export default withAuthenticator(Login, {
+  socialProviders: ["google"],
+});
