@@ -1,0 +1,7 @@
+.env
+node_modules
+package-lock.json
+public.zip
+.gitignore
+bits-hostel-chatbot/.gitignore
+bits-hostel-chatbot/package-lock.json
