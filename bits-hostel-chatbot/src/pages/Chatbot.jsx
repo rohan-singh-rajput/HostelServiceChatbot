@@ -1,10 +1,8 @@
-// components/Chatbot.jsx
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Send, MessageCircle, X, Mic } from "lucide-react";
 import { LexRuntimeV2Client, RecognizeTextCommand } from "@aws-sdk/client-lex-runtime-v2";
 import { v4 as uuidv4 } from "uuid";
-
 
 const client = new LexRuntimeV2Client({
   region: import.meta.env.VITE_AWS_REGION,
@@ -19,18 +17,18 @@ const BOT_ID = import.meta.env.VITE_BOT_ID;
 const BOT_ALIAS_ID = import.meta.env.VITE_BOT_ALIAS_ID;
 const BOT_LOCALE_ID = import.meta.env.VITE_BOT_LOCALE_ID;
 
-
-const Chatbot = () =>  {
+const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState([{ text: "Hello! How can I assist you?", sender: "bot" }]);
+  const [messages, setMessages] = useState([
+    { type: "text", text: "Hello! How can I assist you?", sender: "bot" },
+  ]);
   const [input, setInput] = useState("");
   const [isListening, setIsListening] = useState(false);
 
-  console.log("Chatbot component rendered");
   const sendMessage = async (messageText) => {
     if (!messageText.trim()) return;
 
-    setMessages((prev) => [...prev, { text: messageText, sender: "user" }]);
+    setMessages((prev) => [...prev, { type: "text", text: messageText, sender: "user" }]);
     setInput("");
 
     const inputParams = {
@@ -45,15 +43,39 @@ const Chatbot = () =>  {
       const command = new RecognizeTextCommand(inputParams);
       const response = await client.send(command);
 
-      const lexMessages = response.messages?.map((msg) => ({
-        text: msg.content,
-        sender: "bot",
-      })) || [{ text: "Sorry, I didn't catch that.", sender: "bot" }];
+      const lexMessages = [];
+
+      if (response.messages?.length) {
+        response.messages.forEach((msg) => {
+          if (msg.contentType === "PlainText") {
+            lexMessages.push({
+              type: "text",
+              text: msg.content,
+              sender: "bot",
+            });
+          } else if (msg.contentType === "ImageResponseCard") {
+            lexMessages.push({
+              type: "card",
+              sender: "bot",
+              card: {
+                title: msg.imageResponseCard.title,
+                subTitle: msg.imageResponseCard.subTitle,
+                imageUrl: msg.imageResponseCard.imageUrl,
+                buttons: msg.imageResponseCard.buttons || [],
+              },
+            });
+          }
+        });
+      }
+      
 
       setMessages((prev) => [...prev, ...lexMessages]);
     } catch (error) {
       console.error("Lex Error:", error);
-      setMessages((prev) => [...prev, { text: "Something went wrong with Lex.", sender: "bot" }]);
+      setMessages((prev) => [
+        ...prev,
+        { type: "text", text: "Something went wrong with Lex.", sender: "bot" },
+      ]);
     }
   };
 
@@ -108,11 +130,38 @@ const Chatbot = () =>  {
             {messages.map((msg, index) => (
               <motion.div
                 key={index}
-                className={`p-3 rounded-lg max-w-xs ${msg.sender === "user" ? "ml-auto bg-gray-200 text-gray-900" : "bg-gray-100 text-gray-900"}`}
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
+                className={`${msg.sender === "user" ? "ml-auto" : ""}`}
               >
-                {msg.text}
+                {msg.type === "card" ? (
+                  <div className="p-3 rounded-lg bg-white border border-gray-300 shadow-md max-w-xs text-gray-900">
+                    <h4 className="font-bold">{msg.card.title}</h4>
+                    {msg.card.subTitle && <p className="text-sm text-gray-600">{msg.card.subTitle}</p>}
+                    {msg.card.imageUrl && (
+                      <img src={msg.card.imageUrl} alt="Card" className="mt-2 rounded" />
+                    )}
+                    <div className="mt-2 space-y-1">
+                      {msg.card.buttons.map((btn, i) => (
+                        <button
+                          key={i}
+                          onClick={() => sendMessage(btn.value)}
+                          className="w-full bg-gray-200 hover:bg-gray-300 text-left px-3 py-1 rounded"
+                        >
+                          {btn.text}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className={`p-3 rounded-lg max-w-xs ${
+                      msg.sender === "user" ? "bg-gray-200 text-gray-900" : "bg-gray-100 text-gray-900"
+                    }`}
+                  >
+                    {msg.text}
+                  </div>
+                )}
               </motion.div>
             ))}
           </div>
@@ -139,7 +188,6 @@ const Chatbot = () =>  {
       )}
     </div>
   );
-}
-
+};
 
 export default Chatbot;
