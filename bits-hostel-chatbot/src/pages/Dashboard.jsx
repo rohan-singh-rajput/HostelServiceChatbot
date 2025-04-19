@@ -1,7 +1,9 @@
 // src/pages/Dashboard.jsx
-import { useAuth } from "../context/AuthContext";
-import Chatbot from "../pages/Chatbot/";
+
 import { useEffect, useState } from "react";
+import useUser from '../context/useUser';
+import { signOut } from "aws-amplify/auth";
+import Chatbot from "../pages/Chatbot/";
 
 const mockRequests = [
   {
@@ -19,20 +21,36 @@ const mockRequests = [
 ];
 
 export default function Dashboard() {
-  const { user, logout } = useAuth();
+  const { userSession, setUserSession } = useUser();
   const [myRequests, setMyRequests] = useState([]);
 
   useEffect(() => {
-    const filtered = mockRequests.filter((r) => r.userEmail === user?.email);
-    setMyRequests(filtered);
-  }, [user]);
+    if (userSession?.email) {
+      const filtered = mockRequests.filter(
+        (r) => r.userEmail === userSession.email
+      );
+      setMyRequests(filtered);
+    }
+  }, [userSession]);
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      setUserSession(null);
+      window.location.href = "/";
+    } catch (err) {
+      console.error("Logout error:", err);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white text-black p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">Welcome, {user?.name || "BITSian"}</h1>
+        <h1 className="text-3xl font-bold">
+          Welcome, {userSession?.profile || "BITSian"}
+        </h1>
         <button
-          onClick={logout}
+          onClick={handleLogout}
           className="bg-black text-white px-4 py-2 rounded hover:bg-gray-800 transition"
         >
           Logout
