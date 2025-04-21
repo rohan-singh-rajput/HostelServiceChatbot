@@ -12,9 +12,12 @@
   "dependencies": {
     "@aws-amplify/core": "^6.11.2",
     "@aws-amplify/ui-react": "^6.11.0",
+    "@aws-sdk/client-dynamodb": "^3.788.0",
     "@aws-sdk/client-lex-runtime-v2": "^3.782.0",
     "framer-motion": "^12.6.3",
+    "install": "^0.13.0",
     "lucide-react": "^0.487.0",
+    "npm": "^11.3.0",
     "oidc-client-ts": "^3.2.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

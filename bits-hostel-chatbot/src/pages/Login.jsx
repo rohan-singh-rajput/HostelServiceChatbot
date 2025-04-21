@@ -15,6 +15,33 @@ function Login({ user }) {
   const { userSession, setUserSession } = useUser();
   const [isLoading, setIsLoading] = useState(true);
 
+
+  const saveSessionToDynamoDB = async (decoded) => {
+      const session = await fetchAuthSession();
+      const idToken = session.tokens?.idToken?.toString();
+      const sessionPayload = {
+        email: decoded?.email,
+        name: decoded?.profile,
+        sessionId: decoded?.sub,
+        loginTime: new Date().toISOString(),
+  
+      }
+      try{
+        await fetch("https://drzy65cmy0.execute-api.ap-northeast-1.amazonaws.com/store-session",{
+        method: 'POST',
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": idToken,
+        },
+        body : JSON.stringify(sessionPayload),
+      });
+      console.log("Session saved to DynamoDB successfully:", sessionPayload);
+    } catch(error){
+      console.error("Error saving session to DynamoDB:", error);
+    }
+    }
+  
+
   const validateEmailDomain = async () => {
     try {
       const session = await fetchAuthSession();
@@ -26,6 +53,7 @@ function Login({ user }) {
 
       if (email.endsWith("@hyderabad.bits-pilani.ac.in")) {
         setUserSession(decoded);
+        await saveSessionToDynamoDB(decoded);
         navigate("/chat");
       } else {
         alert("Please use your BITS Hyderabad email address to login.");

@@ -30,7 +30,6 @@ const Chatbot = () => {
   const [isListening, setIsListening] = useState(false);
   const navigate = useNavigate();
 
-  //userSession
   useEffect(() => {
     const initUser = async () => {
       try {
@@ -43,6 +42,13 @@ const Chatbot = () => {
 
           if (email?.endsWith("@hyderabad.bits-pilani.ac.in")) {
             setUserSession(decoded);
+
+            // Save session only once per login using localStorage
+            const sessionKey = `sessionSaved_${decoded.sub}`;
+            if (!localStorage.getItem(sessionKey)) {
+              await saveSessionToDynamoDB(decoded);
+              localStorage.setItem(sessionKey, "true");
+            }
           } else {
             alert("Access restricted. Please login with your BITS Hyderabad email.");
             await signOut();
@@ -61,9 +67,34 @@ const Chatbot = () => {
     try {
       await signOut();
       setUserSession(null);
+      localStorage.clear();
       navigate("/");
     } catch (error) {
       console.error("Logout error:", error);
+    }
+  };
+
+  const saveSessionToDynamoDB = async (decoded) => {
+    const session = await fetchAuthSession();
+    const idToken = session.tokens?.idToken?.toString();
+    const sessionPayload = {
+      email: decoded?.email,
+      name: decoded?.profile,
+      sessionId: decoded?.sub,
+      loginTime: new Date().toISOString(),
+    };
+
+    try {
+      await fetch("https://drzy65cmy0.execute-api.ap-northeast-1.amazonaws.com/store-session", { 
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: idToken,
+        },
+        body: JSON.stringify(sessionPayload),
+      });
+    } catch (error) {
+      console.error("Error saving session to DynamoDB:", error);
     }
   };
 
@@ -140,15 +171,12 @@ const Chatbot = () => {
 
   return (
     <div className="min-h-screen bg-white text-black flex flex-col">
-      {/*  NAVBAR */}
       <div className="flex justify-between items-center px-6 py-4 bg-black text-white shadow-md">
         <h1 className="text-2xl font-bold">BITS Hostel Chatbot</h1>
         <div className="flex items-center space-x-4">
           {userSession && <span className="text-green-300">Welcome, {userSession.profile}</span>}
           <Link to="/">
-            <button className="border px-4 py-1 rounded hover:bg-white hover:text-black transition">
-              Home
-            </button>
+            <button className="border px-4 py-1 rounded hover:bg-white hover:text-black transition">Home</button>
           </Link>
           <button
             onClick={handleLogout}
@@ -159,7 +187,6 @@ const Chatbot = () => {
         </div>
       </div>
 
-      {/* CHAT WIDGET */}
       <div className="flex-1 flex justify-center items-end p-6 relative">
         <div className="fixed bottom-6 right-6 z-50">
           {!isOpen ? (
@@ -195,9 +222,7 @@ const Chatbot = () => {
                     {msg.type === "card" ? (
                       <div className="p-3 rounded-lg bg-white border border-gray-300 shadow-md max-w-xs text-gray-900">
                         <h4 className="font-bold">{msg.card.title}</h4>
-                        {msg.card.subTitle && (
-                          <p className="text-sm text-gray-600">{msg.card.subTitle}</p>
-                        )}
+                        {msg.card.subTitle && <p className="text-sm text-gray-600">{msg.card.subTitle}</p>}
                         {msg.card.imageUrl && (
                           <img src={msg.card.imageUrl} alt="Card" className="mt-2 rounded" />
                         )}
