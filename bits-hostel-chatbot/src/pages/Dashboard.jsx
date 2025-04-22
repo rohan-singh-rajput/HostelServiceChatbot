@@ -77,7 +77,6 @@ export default function Dashboard() {
       </div>
 
       {/* Floating Chatbot Button */}
-      <Chatbot />
     </div>
   );
 }
