@@ -6,6 +6,7 @@ import Chatbot from "./pages/Chatbot";
 import { Amplify } from "aws-amplify";
 import awsconfig from "./aws-exports";
 import useUser from "./context/useUser"; 
+// import ProfilePage from "./pages/ProfilePage";
 
 // Configure Amplify OAuth
 Amplify.configure({
@@ -34,6 +35,7 @@ export default function App() {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/chat" element={<Chatbot />} />
+      {/* <Route path="/profile" element={<ProfilePage />} /> */}
       <Route
         path="/dashboard"
         element={
